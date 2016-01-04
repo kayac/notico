@@ -17,6 +17,7 @@ var (
 	channel  string
 	version  string
 	userName string
+	domain   string
 )
 
 func main() {
@@ -57,7 +58,10 @@ Loop:
 			case *slack.TeamJoinEvent:
 				notifyMsg = fmt.Sprintf("<@%s> がチームにjoinしました", ev.User.ID)
 			case *slack.BotAddedEvent:
-				notifyMsg = fmt.Sprintf("bot %s が追加されました", ev.Bot.Name)
+				notifyMsg = fmt.Sprintf("bot %s が追加されました https://%s.slack.com/services/%s", ev.Bot.Name, domain, ev.Bot.ID)
+			case *slack.ConnectedEvent:
+				domain = ev.Info.Team.Domain
+				log.Printf("Team Info: %#v", ev.Info.Team)
 			case *slack.InvalidAuthEvent:
 				log.Printf("Invalid credentials")
 				break Loop
