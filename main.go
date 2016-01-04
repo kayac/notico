@@ -13,14 +13,16 @@ import (
 )
 
 var (
-	token   string
-	channel string
-	version string
+	token    string
+	channel  string
+	version  string
+	userName string
 )
 
 func main() {
 	var showVersion bool
 	flag.StringVar(&channel, "channel", "#admins", "Channel to post notification message")
+	flag.StringVar(&userName, "username", "notico", "user name")
 	flag.BoolVar(&showVersion, "version", false, "Show versrion")
 	if showVersion {
 		fmt.Println("notico version", version)
@@ -43,7 +45,7 @@ Loop:
 		case msg := <-rtm.IncomingEvents:
 			switch ev := msg.Data.(type) {
 			case *slack.ChannelCreatedEvent:
-				notifyMsg = fmt.Sprintf("<@%s> が#%s を作成しました", ev.Channel.Creator, ev.Channel.Name)
+				notifyMsg = fmt.Sprintf("<@%s> が #%s を作成しました", ev.Channel.Creator, ev.Channel.Name)
 			case *slack.ChannelDeletedEvent:
 				notifyMsg = fmt.Sprintf("<#%s> が削除されました", ev.Channel)
 			case *slack.ChannelRenameEvent:
@@ -66,8 +68,9 @@ Loop:
 		}
 		if notifyMsg != "" {
 			sendMessage(Message{
-				Text:    notifyMsg,
-				Channel: channel,
+				Text:     notifyMsg,
+				Channel:  channel,
+				Username: userName,
 			})
 			log.Println("msg:", notifyMsg)
 		}
@@ -86,12 +89,16 @@ func sendMessage(msg Message) {
 		"token":      {token},
 		"channel":    {msg.Channel},
 		"text":       {msg.Text},
-		"username":   {msg.Username},
-		"icon_emoji": {msg.IconEmoji},
 		"link_names": {"1"},
 	}
+	if msg.Username != "" {
+		q.Add("username", msg.Username)
+	}
+	if msg.IconEmoji != "" {
+		q.Add("icon_emoji", msg.IconEmoji)
+	}
 	log.Println(q.Encode())
-	resp, err := http.Get(fmt.Sprintf("%s?%s", `https://slack.com/api/chat.postMessage`, q.Encode()))
+	resp, err := http.PostForm("https://slack.com/api/chat.postMessage", q)
 	if err != nil {
 		log.Println("err response", err)
 	}
