@@ -94,6 +94,7 @@ func sendMessage(msg Message) {
 		"channel":    {msg.Channel},
 		"text":       {msg.Text},
 		"link_names": {"1"},
+		"as_user":    {"1"},
 	}
 	if msg.Username != "" {
 		q.Add("username", msg.Username)
