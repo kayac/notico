@@ -54,7 +54,17 @@ Loop:
 			case *slack.ChannelUnarchiveEvent:
 				notifyMsg = fmt.Sprintf("<@%s> が <#%s> をアーカイブ解除しました", ev.User, ev.Channel)
 			case *slack.TeamJoinEvent:
-				notifyMsg = fmt.Sprintf("<@%s> がチームにjoinしました", ev.User.ID)
+				accoutType := ""
+				if ev.User.IsBot {
+					accoutType = "bot"
+				} else if ev.User.IsRestricted {
+					accoutType = "restricted"
+				} else if ev.User.IsUltraRestricted {
+					accoutType = "guest"
+				} else {
+					accoutType = "normal"
+				}
+				notifyMsg = fmt.Sprintf("<@%s> がチームにjoinしました (%s)", ev.User.ID, accoutType)
 			case *slack.BotAddedEvent:
 				notifyMsg = fmt.Sprintf("bot %s が追加されました https://%s.slack.com/services/%s", ev.Bot.Name, domain, ev.Bot.ID)
 			case *slack.ConnectedEvent:
