@@ -13,17 +13,15 @@ import (
 )
 
 var (
-	token    string
-	channel  string
-	version  string
-	userName string
-	domain   string
+	token   string
+	channel string
+	version string
+	domain  string
 )
 
 func main() {
 	var showVersion bool
 	flag.StringVar(&channel, "channel", "#admins", "Channel to post notification message")
-	flag.StringVar(&userName, "username", "notico", "user name")
 	flag.BoolVar(&showVersion, "version", false, "Show versrion")
 	if showVersion {
 		fmt.Println("notico version", version)
@@ -72,9 +70,8 @@ Loop:
 		}
 		if notifyMsg != "" {
 			sendMessage(Message{
-				Text:     notifyMsg,
-				Channel:  channel,
-				Username: userName,
+				Text:    notifyMsg,
+				Channel: channel,
 			})
 			log.Println("msg:", notifyMsg)
 		}
@@ -82,10 +79,8 @@ Loop:
 }
 
 type Message struct {
-	Text      string
-	Username  string
-	Channel   string
-	IconEmoji string
+	Text    string
+	Channel string
 }
 
 func sendMessage(msg Message) {
@@ -95,12 +90,6 @@ func sendMessage(msg Message) {
 		"text":       {msg.Text},
 		"link_names": {"1"},
 		"as_user":    {"1"},
-	}
-	if msg.Username != "" {
-		q.Add("username", msg.Username)
-	}
-	if msg.IconEmoji != "" {
-		q.Add("icon_emoji", msg.IconEmoji)
 	}
 	log.Println(q.Encode())
 	resp, err := http.PostForm("https://slack.com/api/chat.postMessage", q)
