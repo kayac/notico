@@ -57,10 +57,10 @@ Loop:
 				accoutType := ""
 				if ev.User.IsBot {
 					accoutType = "bot"
-				} else if ev.User.IsRestricted {
-					accoutType = "restricted"
 				} else if ev.User.IsUltraRestricted {
 					accoutType = "guest"
+				} else if ev.User.IsRestricted {
+					accoutType = "restricted"
 				} else {
 					accoutType = "normal"
 				}
