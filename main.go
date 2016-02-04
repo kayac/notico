@@ -64,7 +64,7 @@ Loop:
 				} else {
 					accoutType = "normal"
 				}
-				notifyMsg = fmt.Sprintf("<@%s> がチームにjoinしました (%s)", ev.User.ID, accoutType)
+				notifyMsg = fmt.Sprintf("<@%s> (%s) がチームにjoinしました (%s)", ev.User.ID, ev.User.Profile.Email, accoutType)
 			case *slack.BotAddedEvent:
 				notifyMsg = fmt.Sprintf("bot %s が追加されました https://%s.slack.com/services/%s", ev.Bot.Name, domain, ev.Bot.ID)
 			case *slack.ConnectedEvent:
