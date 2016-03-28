@@ -58,9 +58,9 @@ Loop:
 				if ev.User.IsBot {
 					accoutType = "bot"
 				} else if ev.User.IsUltraRestricted {
-					accoutType = "guest"
+					accoutType = "single channel guest"
 				} else if ev.User.IsRestricted {
-					accoutType = "restricted"
+					accoutType = "multi channel guest"
 				} else {
 					accoutType = "normal"
 				}
