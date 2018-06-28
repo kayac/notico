@@ -72,16 +72,16 @@ Loop:
 				log.Printf("Team Info: %#v", ev.Info.Team)
 			case *slack.ChannelLeftEvent:
 				info, err := api.GetChannelInfo(ev.Channel)
-
 				if err != nil {
-					log.Printf("%s\n", err)
-					break Loop
+					log.Printf("failed to get channel info: %s", err)
+					continue
 				}
-
 				if len(info.Members) == 0 {
-					api.ArchiveChannel(ev.Channel)
+					err := api.ArchiveChannel(ev.Channel)
+					if err != nil {
+						log.Printf("failed to archive channel: %s", err)
+					}
 				}
-
 			case *slack.InvalidAuthEvent:
 				log.Printf("Invalid credentials")
 				break Loop
