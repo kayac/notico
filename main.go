@@ -20,9 +20,14 @@ var (
 )
 
 func main() {
-	var showVersion bool
+	var (
+		showVersion bool
+		autoArchive bool
+	)
 	flag.StringVar(&channel, "channel", "#admins", "Channel to post notification message")
 	flag.BoolVar(&showVersion, "version", false, "Show versrion")
+	flag.BoolVar(&autoArchive, "auto-archive", false, "Archive the channel which includes nobody automatically")
+	flag.Parse()
 	if showVersion {
 		fmt.Println("notico version", version)
 		return
@@ -71,6 +76,9 @@ Loop:
 				domain = ev.Info.Team.Domain
 				log.Printf("Team Info: %#v", ev.Info.Team)
 			case *slack.ChannelLeftEvent:
+				if !autoArchive {
+					continue
+				}
 				info, err := api.GetChannelInfo(ev.Channel)
 				if err != nil {
 					log.Printf("failed to get channel info: %s", err)

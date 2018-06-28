@@ -20,9 +20,21 @@ $ notico [-channel "#foo"]
 - channel_rename
 - channel_archive
 - channel_unarchive
+- channel_left
 - team_join
 - bot_added
 
+## Options
+
+```
+Usage of notico
+  -auto-archive
+    	Archive the channel which includes nobody automatically
+  -channel string
+    	Channel to post notification message (default "#admins")
+  -version
+    	Show versrion
+```
 
 ## LICENSE
 
