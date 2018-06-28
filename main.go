@@ -70,6 +70,18 @@ Loop:
 			case *slack.ConnectedEvent:
 				domain = ev.Info.Team.Domain
 				log.Printf("Team Info: %#v", ev.Info.Team)
+			case *slack.ChannelLeftEvent:
+				info, err := api.GetChannelInfo(ev.Channel)
+
+				if err != nil {
+					log.Printf("%s\n", err)
+					break Loop
+				}
+
+				if len(info.Members) == 0 {
+					api.ArchiveChannel(ev.Channel)
+				}
+
 			case *slack.InvalidAuthEvent:
 				log.Printf("Invalid credentials")
 				break Loop
