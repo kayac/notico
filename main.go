@@ -58,6 +58,8 @@ Loop:
 				notifyMsg = fmt.Sprintf("<@%s> が <#%s> をアーカイブしました", ev.User, ev.Channel)
 			case *slack.ChannelUnarchiveEvent:
 				notifyMsg = fmt.Sprintf("<@%s> が <#%s> をアーカイブ解除しました", ev.User, ev.Channel)
+			case *slack.SubteamCreatedEvent:
+				notifyMsg = fmt.Sprintf("<@%s> がユーザグループ <!subteam^%s|%s> を作成しました: %s", ev.Subteam.CreatedBy, ev.Subteam.ID, ev.Subteam.Handle, ev.Subteam.Description)
 			case *slack.TeamJoinEvent:
 				accoutType := ""
 				if ev.User.IsBot {
