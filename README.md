@@ -23,6 +23,7 @@ $ notico [-channel "#foo"]
 - channel_left
 - team_join
 - bot_added
+- subteam_created
 
 ## Options
 
