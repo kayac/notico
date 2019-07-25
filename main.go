@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/hashicorp/logutils"
 	"github.com/nlopes/slack"
 )
 
@@ -36,6 +37,21 @@ func main() {
 		fmt.Println("SLACK_TOKEN environment variable is not set.")
 		os.Exit(1)
 	}
+
+	// set log level
+	var minLevel logutils.LogLevel
+	if os.Getenv("DEBUG") != "" {
+		minLevel = logutils.LogLevel("debug")
+	} else {
+		minLevel = logutils.LogLevel("info")
+	}
+	filter := &logutils.LevelFilter{
+		Levels:   []logutils.LogLevel{"debug", "info", "warn", "error"},
+		MinLevel: minLevel,
+		Writer:   os.Stderr,
+	}
+	log.SetOutput(filter)
+
 	api := slack.New(token)
 	if os.Getenv("DEBUG") != "" {
 		api.SetDebug(true)
@@ -76,28 +92,28 @@ Loop:
 				notifyMsg = fmt.Sprintf("bot %s が追加されました https://%s.slack.com/services/%s", ev.Bot.Name, domain, ev.Bot.ID)
 			case *slack.ConnectedEvent:
 				domain = ev.Info.Team.Domain
-				log.Printf("Team Info: %#v", ev.Info.Team)
+				log.Printf("[info] Team Info: %#v", ev.Info.Team)
 			case *slack.ChannelLeftEvent:
 				if !autoArchive {
 					continue
 				}
 				info, err := api.GetChannelInfo(ev.Channel)
 				if err != nil {
-					log.Printf("failed to get channel info: %s", err)
+					log.Printf("[warn] failed to get channel info: %s", err)
 					continue
 				}
 				if len(info.Members) == 0 {
 					err := api.ArchiveChannel(ev.Channel)
 					if err != nil {
-						log.Printf("failed to archive channel: %s", err)
+						log.Printf("[warn] failed to archive channel: %s", err)
 					}
 				}
 			case *slack.InvalidAuthEvent:
-				log.Printf("Invalid credentials")
+				log.Printf("[error] Invalid credentials")
 				break Loop
 			default:
 				// Ignore other events..
-				log.Printf("Unexpected: %#v\n", msg.Data)
+				log.Printf("[debug] Unexpected: %#v\n", msg.Data)
 			}
 		}
 		if notifyMsg != "" {
@@ -105,7 +121,7 @@ Loop:
 				Text:    notifyMsg,
 				Channel: channel,
 			})
-			log.Println("msg:", notifyMsg)
+			log.Println("[info] msg:", notifyMsg)
 		}
 	}
 }
@@ -123,15 +139,15 @@ func sendMessage(msg Message) {
 		"link_names": {"1"},
 		"as_user":    {"1"},
 	}
-	log.Println(q.Encode())
+	log.Println("[info] ", q.Encode())
 	resp, err := http.PostForm("https://slack.com/api/chat.postMessage", q)
 	if err != nil {
-		log.Println("err response", err)
+		log.Println("[warn] err response", err)
 	}
 	defer resp.Body.Close()
 	s, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("readall failed", err)
+		log.Println("[warn] readall failed", err)
 	}
-	log.Println(string(s))
+	log.Println("[info] ", string(s))
 }
