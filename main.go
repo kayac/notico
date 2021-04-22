@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/logutils"
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 )
 
 var (
@@ -23,11 +23,9 @@ var (
 func main() {
 	var (
 		showVersion bool
-		autoArchive bool
 	)
 	flag.StringVar(&channel, "channel", "#admins", "Channel to post notification message")
 	flag.BoolVar(&showVersion, "version", false, "Show versrion")
-	flag.BoolVar(&autoArchive, "auto-archive", false, "Archive the channel which includes nobody automatically")
 	flag.Parse()
 	if showVersion {
 		fmt.Println("notico version", version)
@@ -40,8 +38,10 @@ func main() {
 
 	// set log level
 	var minLevel logutils.LogLevel
+	var debug bool
 	if os.Getenv("DEBUG") != "" {
 		minLevel = logutils.LogLevel("debug")
+		debug = true
 	} else {
 		minLevel = logutils.LogLevel("info")
 	}
@@ -52,10 +52,7 @@ func main() {
 	}
 	log.SetOutput(filter)
 
-	api := slack.New(token)
-	if os.Getenv("DEBUG") != "" {
-		api.SetDebug(true)
-	}
+	api := slack.New(token, slack.OptionDebug(debug))
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
 Loop:
@@ -93,21 +90,6 @@ Loop:
 			case *slack.ConnectedEvent:
 				domain = ev.Info.Team.Domain
 				log.Printf("[info] Team Info: %#v", ev.Info.Team)
-			case *slack.ChannelLeftEvent:
-				if !autoArchive {
-					continue
-				}
-				info, err := api.GetChannelInfo(ev.Channel)
-				if err != nil {
-					log.Printf("[warn] failed to get channel info: %s", err)
-					continue
-				}
-				if len(info.Members) == 0 {
-					err := api.ArchiveChannel(ev.Channel)
-					if err != nil {
-						log.Printf("[warn] failed to archive channel: %s", err)
-					}
-				}
 			case *slack.InvalidAuthEvent:
 				log.Printf("[error] Invalid credentials")
 				break Loop
