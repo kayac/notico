@@ -8,26 +8,27 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/logutils"
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 )
 
 var (
-	token   string
-	channel string
-	version string
-	domain  string
+	token           string
+	channel         string
+	version         string
+	domain          string
+	watchDogTimeout = 300 * time.Second
 )
 
 func main() {
 	var (
 		showVersion bool
-		autoArchive bool
 	)
 	flag.StringVar(&channel, "channel", "#admins", "Channel to post notification message")
 	flag.BoolVar(&showVersion, "version", false, "Show versrion")
-	flag.BoolVar(&autoArchive, "auto-archive", false, "Archive the channel which includes nobody automatically")
 	flag.Parse()
 	if showVersion {
 		fmt.Println("notico version", version)
@@ -40,8 +41,10 @@ func main() {
 
 	// set log level
 	var minLevel logutils.LogLevel
+	var debug bool
 	if os.Getenv("DEBUG") != "" {
 		minLevel = logutils.LogLevel("debug")
+		debug = true
 	} else {
 		minLevel = logutils.LogLevel("info")
 	}
@@ -52,17 +55,17 @@ func main() {
 	}
 	log.SetOutput(filter)
 
-	api := slack.New(token)
-	if os.Getenv("DEBUG") != "" {
-		api.SetDebug(true)
-	}
+	api := slack.New(token, slack.OptionDebug(debug))
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
+	timer := time.NewTimer(watchDogTimeout)
+	go watchdog(timer)
 Loop:
 	for {
 		var notifyMsg string
 		select {
 		case msg := <-rtm.IncomingEvents:
+			timer.Reset(watchDogTimeout)
 			switch ev := msg.Data.(type) {
 			case *slack.ChannelCreatedEvent:
 				notifyMsg = fmt.Sprintf("<@%s> が #%s を作成しました", ev.Channel.Creator, ev.Channel.Name)
@@ -93,24 +96,18 @@ Loop:
 			case *slack.ConnectedEvent:
 				domain = ev.Info.Team.Domain
 				log.Printf("[info] Team Info: %#v", ev.Info.Team)
-			case *slack.ChannelLeftEvent:
-				if !autoArchive {
-					continue
-				}
-				info, err := api.GetChannelInfo(ev.Channel)
-				if err != nil {
-					log.Printf("[warn] failed to get channel info: %s", err)
-					continue
-				}
-				if len(info.Members) == 0 {
-					err := api.ArchiveChannel(ev.Channel)
-					if err != nil {
-						log.Printf("[warn] failed to archive channel: %s", err)
-					}
-				}
 			case *slack.InvalidAuthEvent:
 				log.Printf("[error] Invalid credentials")
 				break Loop
+			case *slack.HelloEvent:
+				// notifyMsg = "Good morning"
+			case *slack.MessageEvent:
+				log.Printf("[info] message text: %s\n", ev.Text)
+				if strings.HasPrefix(ev.Text, "notico:") && strings.Contains(ev.Text, "ping") {
+					notifyMsg = "pong"
+				}
+			case *slack.LatencyReport:
+				log.Printf("[info] latency report: %d ms", ev.Value.Milliseconds())
 			default:
 				// Ignore other events..
 				log.Printf("[debug] Unexpected: %#v\n", msg.Data)
@@ -150,4 +147,10 @@ func sendMessage(msg Message) {
 		log.Println("[warn] readall failed", err)
 	}
 	log.Println("[info] ", string(s))
+}
+
+func watchdog(t *time.Timer) {
+	<-t.C
+	log.Println("[error] watchdog timeout reached", watchDogTimeout.String())
+	os.Exit(1)
 }

@@ -29,8 +29,6 @@ $ notico [-channel "#foo"]
 
 ```
 Usage of notico
-  -auto-archive
-    	Archive the channel which includes nobody automatically
   -channel string
     	Channel to post notification message (default "#admins")
   -version
