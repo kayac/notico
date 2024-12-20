@@ -1,0 +1,9 @@
+.lambdaignore
+function.json
+function.jsonnet
+function_url.json
+function_url.jsonnet
+function.zip
+.git/*
+.terraform/*
+terraform.tfstate

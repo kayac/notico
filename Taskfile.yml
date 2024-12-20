@@ -1,0 +1,13 @@
+version: '3'
+tasks:
+  devserver:
+    desc: Run the development server
+    cmds:
+      - go run ./cmd/eventslambda --local-address '127.0.0.1:8081'
+includes:
+  terraform:
+    taskfile: ./terraform/Taskfile.yaml
+    dir: ./terraform/
+  lambda:
+    taskfile: ./lambda/Taskfile.yaml
+    dir: ./lambda

@@ -1,0 +1,37 @@
+version: '3'
+
+vars:
+  TERRAFORM_INIT_COMMAND: aqua exec terraform init -backend-config="bucket=${TF_BACKEND_BUCKET}" -backend-config="key=${TF_BACKEND_KEY}" -backend-config="region=${TF_BACKEND_REGION}"
+
+tasks:
+  lock:
+    desc: Terraformのproviderのlockを更新します。
+    cmds:
+      - |
+        aqua exec terraform providers lock \
+          -platform=darwin_amd64 \
+          -platform=darwin_arm64 \
+          -platform=linux_amd64 \
+          -platform=linux_arm64 \
+          -platform=windows_amd64
+  init:
+    desc: terraform initを実行します。
+    cmds:
+      - task: lock
+      - "{{.TERRAFORM_INIT_COMMAND}} --upgrade"
+  plan:
+    desc: terraform planを実行します。
+    cmds:
+      - aqua exec terraform plan -var="region=${AWS_REGION}"
+      - defer: rm null.zip
+  apply:
+    desc: terraform applyを実行します。
+    cmds:
+      - pwd
+      - aqua exec terraform apply -var="region=${AWS_REGION}"
+      - defer: rm null.zip
+  destroy:
+    desc: terraform destroyを実行します。
+    cmds:
+      - pwd
+      - aqua exec terraform destroy -var="region=${AWS_REGION}"

@@ -1,0 +1,23 @@
+version: '3'
+tasks:
+  build:
+    desc: Build the application
+    env:
+      GOOS: linux
+      GOARCH: arm64
+    cmds:
+      - go build -o bootstrap ../cmd/eventslambda
+  deploy:
+    desc: Deploy the application
+    deps: [build]
+    cmds:
+      - lambroll deploy
+      - defer: rm -f bootstrap
+  logs:
+    desc: Show logs
+    cmds:
+      - lambroll logs --follow
+  lambroll:
+    desc: Run lambroll command
+    cmds:
+      - lambroll {{ .CLI_ARGS }}

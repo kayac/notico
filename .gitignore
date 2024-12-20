@@ -26,3 +26,5 @@ _testmain.go
 *~
 pkg/*
 dist/*
+.envrc
+terraform/.terraform/
